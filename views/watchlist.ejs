@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BitLens - Watchlist</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="main-container">
+    <nav class="main-nav">
+      <div class="logo"><i class="fas fa-chart-line logo-icon"></i> BitLens</div>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/search"><i class="fas fa-search"></i> Search</a>
+        <a href="/watchlist" class="active"><i class="fas fa-star"></i> Watchlist</a>
+        <a href="/alerts"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="/news"><i class="fas fa-newspaper"></i> News</a>
+      </div>
+    </nav>
+
+    <h1>Your Watchlist</h1>
+
+    <% if (watchlist.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-star empty-icon"></i>
+        <p>Your watchlist is empty</p>
+        <p class="empty-description">Add cryptocurrencies to your watchlist from the home page or search page</p>
+        <a href="/" class="btn btn-primary">Go to Home</a>
+      </div>
+    <% } else { %>
+      <div class="crypto-list-container">
+        <% watchlist.forEach(coin => { %>
+          <div class="crypto-list-item">
+            <div class="crypto-icon">
+              <img src="<%= coin.image %>" alt="<%= coin.name %>">
+            </div>
+            <div class="crypto-details">
+              <span class="crypto-name"><%= coin.name %></span>
+              <span class="crypto-symbol"><%= coin.symbol.toUpperCase() %></span>
+            </div>
+            <div class="crypto-price">£<%= coin.current_price.toLocaleString() %></div>
+            <div class="crypto-change <%= coin.price_change_percentage_24h > 0 ? 'positive' : 'negative' %>">
+              <% if(coin.price_change_percentage_24h > 0) { %>
+                <i class="fas fa-caret-up"></i>
+              <% } else { %>
+                <i class="fas fa-caret-down"></i>
+              <% } %>
+              <%= Math.abs(coin.price_change_percentage_24h).toFixed(2) %>%
+            </div>
+            <button class="watchlist-btn remove-btn" data-id="<%= coin.id %>">
+              <i class="fas fa-star"></i>
+            </button>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <script src="/watchlist.js"></script>
+</body>
+</html>

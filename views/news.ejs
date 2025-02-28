@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News - BitLens</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="main-container">
+    <nav class="main-nav">
+      <div class="logo"><i class="fas fa-chart-line logo-icon"></i> BitLens</div>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/search"><i class="fas fa-search"></i> Search</a>
+        <a href="/alerts"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="/news" class="active"><i class="fas fa-newspaper"></i> News</a>
+      </div>
+    </nav>
+    
+    <h1>Cryptocurrency News</h1>
+    
+    <% if(!news || news.length === 0) { %>
+      <div class="portfolio-empty">
+        <div class="empty-icon"><i class="fas fa-newspaper"></i></div>
+        <h2>No News Available</h2>
+        <p>No cryptocurrency news articles are available at the moment.</p>
+      </div>
+    <% } else { %>
+      <% news.forEach(article => { %>
+        <div class="news-card">
+          <div class="news-image">
+            <% if(article.thumb_2x) { %>
+              <img src="<%= article.thumb_2x %>" alt="<%= article.title %>">
+            <% } else { %>
+              <i class="fas fa-newspaper" style="font-size: 3rem; color: #e0e0e0;"></i>
+            <% } %>
+          </div>
+          <div class="news-content">
+            <h2><%= article.title %></h2>
+            <p><%= article.description %></p>
+            <div class="news-meta">
+              <span><i class="fas fa-user"></i> <%= article.author %></span>
+            </div>
+            <a href="<%= article.url %>" target="_blank" class="read-more">
+              Read Article <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search - BitLens</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="main-container">
+    <nav class="main-nav">
+      <div class="logo"><i class="fas fa-chart-line logo-icon"></i> BitLens</div>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/search" class="active"><i class="fas fa-search"></i> Search</a>
+        <a href="/watchlist"><i class="fas fa-star"></i> Watchlist</a>
+        <a href="/alerts"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="/news"><i class="fas fa-newspaper"></i> News</a>
+      </div>
+      <div class="theme-toggle" style="position: absolute; top: 10px; right: 10px; font-size: 14px;">
+        <i class="fas fa-sun theme-icon"></i>
+        <label class="theme-switch">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider"></span>
+        </label>
+        <i class="fas fa-moon theme-icon"></i>
+      </div>
+    </nav>
+
+    <h1>Search Cryptocurrencies</h1>
+
+    <div class="search-controls">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search by name or symbol">
+        <button id="searchButton" class="search-btn">
+          <i class="fas fa-search"></i><span class="btn-text">Search</span>
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-header">
+          <label for="priceFilter">Max Price:</label>
+          <span class="filter-value" id="priceValue">$100,000</span>
+        </div>
+        <input type="range" id="priceFilter" min="1" max="100000" value="100000">
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-header">
+          <label for="marketCapFilter">Minimum Market Cap</label>
+          <span id="marketCapValue" class="filter-value">$0</span>
+        </div>
+        <input type="range" id="marketCapFilter" min="0" max="1000000000000" value="0" step="1000000">
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-header">
+          <label for="marketCapCategory">Market Cap Category</label>
+        </div>
+        <select id="marketCapCategory" class="filter-select">
+          <option value="all" selected>All</option>
+          <option value="large">Large Cap (>$10B)</option>
+          <option value="medium">Medium Cap ($1B-$10B)</option>
+          <option value="small">Small Cap ($100M-$1B)</option>
+          <option value="micro">Micro Cap (<$100M)</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-header">
+          <label for="priceChangeFilter">24h Price Change</label>
+        </div>
+        <select id="priceChangeFilter" class="filter-select">
+          <option value="all" selected>All</option>
+          <option value="positive">Positive (>0%)</option>
+          <option value="negative">Negative (<0%)</option>
+          <option value="major-gain">Major Gain (>5%)</option>
+          <option value="major-loss">Major Loss (<-5%)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-container">
+      <% coins.forEach(coin => { %>
+        <div class="coin-card" data-market-cap="<%= coin.market_cap %>" data-price-change="<%= coin.price_change_percentage_24h %>">
+          <img src="<%= coin.image %>" alt="<%= coin.name %>">
+          <h3><%= coin.name %> <span class="symbol"><%= coin.symbol.toUpperCase() %></span></h3>
+          <div class="price">£<%= coin.current_price.toLocaleString() %></div>
+          <div class="change <%= coin.price_change_percentage_24h > 0 ? 'positive' : 'negative' %>">
+            <% if(coin.price_change_percentage_24h > 0) { %>
+              <i class="fas fa-caret-up"></i>
+            <% } else { %>
+              <i class="fas fa-caret-down"></i>
+            <% } %>
+            <%= Math.abs(coin.price_change_percentage_24h).toFixed(2) %>%
+          </div>
+          <button class="watchlist-btn" data-id="<%= coin.id %>">
+            <i class="fas fa-star"></i>
+          </button>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-controls">
+      <% if (pagination.hasPrev) { %>
+        <a href="/search?page=<%= pagination.page - 1 %>" class="pagination-btn"><i class="fas fa-chevron-left"></i> Previous</a>
+      <% } else { %>
+        <span class="pagination-btn disabled"><i class="fas fa-chevron-left"></i> Previous</span>
+      <% } %>
+
+      <span class="pagination-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+
+      <% if (pagination.hasNext) { %>
+        <a href="/search?page=<%= pagination.page + 1 %>" class="pagination-btn">Next <i class="fas fa-chevron-right"></i></a>
+      <% } else { %>
+        <span class="pagination-btn disabled">Next <i class="fas fa-chevron-right"></i></span>
+      <% } %>
+    </div>
+  </div>
+
+  <script src="/filters.js"></script>
+  <script src="/watchlist.js"></script>
+  <script src="/theme.js"></script>
+  <script>
+    // Verify scripts are loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Page fully loaded');
+
+      // Check if filter elements exist
+      const filterElements = {
+        searchInput: document.getElementById('searchInput'),
+        priceFilter: document.getElementById('priceFilter'),
+        marketCapFilter: document.getElementById('marketCapFilter'),
+        marketCapCategory: document.getElementById('marketCapCategory'),
+        priceChangeFilter: document.getElementById('priceChangeFilter')
+      };
+
+      console.log('Filter elements:', filterElements);
+
+      // Force visibility of filter controls
+      const searchControls = document.querySelector('.search-controls');
+      if (searchControls) {
+        searchControls.style.display = 'flex';
+        console.log('Search controls visibility enforced');
+      }
+    });
+  </script>
+</body>
+</html>

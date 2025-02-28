@@ -1,0 +1,92 @@
+<%- include('partials/header') %>
+    <div class="chart-container">
+        <h1><%= coin.name %> Price Chart</h1>
+
+        <div class="timeframe-selector">
+            <button class="timeframe-btn" data-days="1">24 Hours</button>
+            <button class="timeframe-btn" data-days="7">7 Days</button>
+            <button class="timeframe-btn" data-days="30">30 Days</button>
+            <button class="timeframe-btn" data-days="365">1 Year</button>
+        </div>
+
+        <canvas id="priceChart" width="800" height="400"></canvas>
+
+        <div class="coin-stats">
+            <div class="stat-item">
+                <span class="stat-label">Current Price</span>
+                <span class="stat-value">$<%= coin.current_price.toFixed(2) %></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">24h Change</span>
+                <span class="stat-value <%= coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative' %>">
+                    <%= coin.price_change_percentage_24h.toFixed(2) %>%
+                </span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Market Cap</span>
+                <span class="stat-value">$<%= coin.market_cap.toLocaleString() %></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const coinId = '<%= coin.id %>';
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        let chart;
+
+        async function loadChartData(days) {
+            try {
+                const response = await fetch(`/chart/${coinId}?days=${days}`);
+                const data = await response.json();
+
+                if(chart) chart.destroy();
+
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.prices.map(price => 
+                            new Date(price[0]).toLocaleDateString()),
+                        datasets: [{
+                            label: 'Price in USD',
+                            data: data.prices.map(price => price[1]),
+                            borderColor: '#2196F3',
+                            tension: 0.1,
+                            fill: true,
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Price (USD)'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        document.querySelectorAll('.timeframe-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const days = button.dataset.days;
+                loadChartData(days);
+            });
+        });
+
+        // Load initial chart (7 days)
+        loadChartData(7);
+    </script>
+<%- include('partials/footer') %>

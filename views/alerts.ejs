@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alerts - BitLens</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="main-container">
+    <nav class="main-nav">
+      <div class="logo"><i class="fas fa-chart-line logo-icon"></i> BitLens</div>
+      <div class="nav-links">
+        <a href="/"><i class="fas fa-home"></i> Home</a>
+        <a href="/search"><i class="fas fa-search"></i> Search</a>
+        <a href="/alerts" class="active"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="/news"><i class="fas fa-newspaper"></i> News</a>
+        <a href="/watchlist"><i class="fas fa-star"></i> Watchlist</a>
+      </div>
+    </nav>
+    
+    <h1>Price Alerts</h1>
+    
+    <div class="modal" id="createAlertModal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Create Price Alert</h2>
+        <form id="alertForm">
+          <div class="form-group">
+            <label for="coinSelect">Select Cryptocurrency</label>
+            <select id="coinSelect" required>
+              <option value="">Choose a cryptocurrency</option>
+              <!-- Options will be loaded via JavaScript -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="alertType">Alert Condition</label>
+            <select id="alertType" required>
+              <option value="above">Price goes above</option>
+              <option value="below">Price drops below</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="alertPrice">Price (£)</label>
+            <input type="number" id="alertPrice" placeholder="Enter price in GBP" min="0" step="0.01" required>
+          </div>
+          <div class="form-group notification-options">
+            <label>Notification Options</label>
+            <div class="checkbox-group">
+              <input type="checkbox" id="pushNotification" checked>
+              <label for="pushNotification">Push notifications</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Create Alert</button>
+        </form>
+      </div>
+    </div>
+    
+    <% if(alerts.length === 0) { %>
+      <div class="portfolio-empty">
+        <div class="empty-icon"><i class="fas fa-bell"></i></div>
+        <h2>No Alerts Set</h2>
+        <p class="empty-description">You haven't set any price alerts yet. Create an alert to get notified about price changes.</p>
+        <button class="btn btn-primary" id="createAlertBtn" style="margin-top: 1.5rem;">
+          <i class="fas fa-plus"></i> Create Alert
+        </button>
+      </div>
+    <% } else { %>
+      <div class="alerts-container">
+        <button class="btn btn-primary" id="createAlertBtn" style="margin-bottom: 1.5rem;">
+          <i class="fas fa-plus"></i> Create Alert
+        </button>
+        <div class="alerts-list">
+          <% alerts.forEach(alert => { %>
+            <div class="alert-item" data-id="<%= alert.id %>">
+              <div class="alert-coin">
+                <strong><%= alert.coinName %></strong>
+              </div>
+              <div class="alert-condition">
+                <% if(alert.condition === 'above') { %>
+                  <span class="positive">Above £<%= alert.price %></span>
+                <% } else { %>
+                  <span class="negative">Below £<%= alert.price %></span>
+                <% } %>
+              </div>
+              <div class="alert-current">
+                Current: £<%= alert.currentPrice ? alert.currentPrice.toFixed(2) : 'Loading...' %>
+              </div>
+              <div class="alert-actions">
+                <button class="btn btn-danger delete-alert">Delete</button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <div id="notification" class="notification">
+    <div class="notification-content">
+      <i class="fas fa-bell notification-icon"></i>
+      <span id="notification-message"></span>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const createAlertBtn = document.getElementById('createAlertBtn');
+      const modal = document.getElementById('createAlertModal');
+      const closeModal = document.querySelector('.close-modal');
+      const alertForm = document.getElementById('alertForm');
+      const coinSelect = document.getElementById('coinSelect');
+      
+      // Get all cryptocurrencies for the select dropdown
+      const loadCoins = async () => {
+        try {
+          const response = await fetch('/api/coins');
+          const coins = await response.json();
+          
+          coins.forEach(coin => {
+            const option = document.createElement('option');
+            option.value = coin.id;
+            option.textContent = coin.name;
+            option.dataset.currentPrice = coin.current_price;
+            coinSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Failed to load coins:', error);
+        }
+      };
+      
+      loadCoins();
+      
+      // Open modal when Create Alert button is clicked
+      if (createAlertBtn) {
+        createAlertBtn.addEventListener('click', () => {
+          modal.style.display = 'flex';
+        });
+      }
+      
+      // Close modal when X is clicked
+      if (closeModal) {
+        closeModal.addEventListener('click', () => {
+          modal.style.display = 'none';
+        });
+      }
+      
+      // Close modal when clicking outside of it
+      window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+      
+      // Handle form submission
+      if (alertForm) {
+        alertForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const coinId = coinSelect.value;
+          const coinOption = coinSelect.options[coinSelect.selectedIndex];
+          const coinName = coinOption.textContent;
+          const condition = document.getElementById('alertType').value;
+          const price = parseFloat(document.getElementById('alertPrice').value);
+          const pushEnabled = document.getElementById('pushNotification').checked;
+          
+          try {
+            const response = await fetch('/api/alerts', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                coinId,
+                coinName,
+                condition,
+                price,
+                pushEnabled
+              })
+            });
+            
+            if (response.ok) {
+              // Show success notification
+              showNotification('Alert created successfully!');
+              
+              // Reload the page to show the new alert
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showNotification('Failed to create alert. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error creating alert:', error);
+            showNotification('Failed to create alert. Please try again.');
+          }
+        });
+      }
+      
+      // Handle alert deletion
+      const deleteButtons = document.querySelectorAll('.delete-alert');
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+          const alertItem = this.closest('.alert-item');
+          const alertId = alertItem.dataset.id;
+          
+          try {
+            const response = await fetch(`/api/alerts/${alertId}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              alertItem.style.animation = 'fadeOut 0.5s';
+              setTimeout(() => {
+                alertItem.remove();
+                showNotification('Alert deleted successfully!');
+                
+                // If no alerts left, reload the page to show empty state
+                if (document.querySelectorAll('.alert-item').length === 0) {
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                }
+              }, 500);
+            } else {
+              showNotification('Failed to delete alert. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error deleting alert:', error);
+            showNotification('Failed to delete alert. Please try again.');
+          }
+        });
+      });
+      
+      // Request notification permission
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('Notification permission granted');
+          }
+        });
+      }
+      
+      // Show in-app notification
+      function showNotification(message) {
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        notificationMessage.textContent = message;
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 3000);
+      }
+    });
+  </script>
+</body>
+</html>
